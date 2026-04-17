@@ -189,7 +189,7 @@ function App() {
     setIsRefreshing(true);
     setRefreshSuccess(false);
     try {
-      await refreshUsage();
+      await refreshUsage(undefined, { refreshMetadata: true });
       setRefreshSuccess(true);
       setTimeout(() => setRefreshSuccess(false), 2000);
     } finally {
@@ -642,7 +642,9 @@ function App() {
                     handleWarmupAccount(activeAccount.id, activeAccount.name)
                   }
                   onDelete={() => handleDelete(activeAccount.id)}
-                  onRefresh={() => refreshSingleUsage(activeAccount.id)}
+                  onRefresh={() =>
+                    refreshSingleUsage(activeAccount.id, { refreshMetadata: true })
+                  }
                   onRename={(newName) => renameAccount(activeAccount.id, newName)}
                   switching={switchingId === activeAccount.id}
                   switchDisabled={hasRunningProcesses ?? false}
@@ -718,7 +720,9 @@ function App() {
                       onSwitch={() => handleSwitch(account.id)}
                       onWarmup={() => handleWarmupAccount(account.id, account.name)}
                       onDelete={() => handleDelete(account.id)}
-                      onRefresh={() => refreshSingleUsage(account.id)}
+                      onRefresh={() =>
+                        refreshSingleUsage(account.id, { refreshMetadata: true })
+                      }
                       onRename={(newName) => renameAccount(account.id, newName)}
                       switching={switchingId === account.id}
                       switchDisabled={hasRunningProcesses ?? false}

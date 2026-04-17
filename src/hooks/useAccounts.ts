@@ -89,15 +89,31 @@ export function useAccounts() {
   }, []);
 
   const refreshUsage = useCallback(
-    async (accountList?: AccountInfo[] | AccountWithUsage[]) => {
+    async (
+      accountList?: AccountInfo[] | AccountWithUsage[],
+      options?: { refreshMetadata?: boolean }
+    ) => {
     try {
-      const list = accountList ?? accountsRef.current;
+      let list = accountList ?? accountsRef.current;
       if (list.length === 0) {
         return;
       }
 
-      const accountIds = list.map((account) => account.id);
+      let accountIds = list.map((account) => account.id);
       const accountIdSet = new Set(accountIds);
+
+      if (options?.refreshMetadata) {
+        await runWithConcurrency(
+          accountIds,
+          async (accountId) => {
+            await invokeBackend<AccountInfo>("refresh_account_metadata", { accountId });
+          },
+          maxConcurrentUsageRequests
+        );
+
+        list = await loadAccounts(true);
+        accountIds = list.map((account) => account.id);
+      }
 
       setAccounts((prev) =>
         prev.map((account) =>
@@ -142,11 +158,19 @@ export function useAccounts() {
       throw err;
     }
     },
-    [buildUsageError, maxConcurrentUsageRequests, runWithConcurrency]
+    [buildUsageError, loadAccounts, maxConcurrentUsageRequests, runWithConcurrency]
   );
 
-  const refreshSingleUsage = useCallback(async (accountId: string) => {
+  const refreshSingleUsage = useCallback(async (
+    accountId: string,
+    options?: { refreshMetadata?: boolean }
+  ) => {
     try {
+      if (options?.refreshMetadata) {
+        await invokeBackend<AccountInfo>("refresh_account_metadata", { accountId });
+        await loadAccounts(true);
+      }
+
       setAccounts((prev) =>
         prev.map((a) =>
           a.id === accountId ? { ...a, usageLoading: true } : a
@@ -174,7 +198,7 @@ export function useAccounts() {
       );
       throw err;
     }
-  }, []);
+  }, [buildUsageError, loadAccounts]);
 
   const warmupAccount = useCallback(async (accountId: string) => {
     try {

@@ -146,13 +146,14 @@ pub fn touch_account(account_id: &str) -> Result<()> {
     Ok(())
 }
 
-/// Update an account's metadata (name, email, plan_type)
+/// Update an account's metadata (name, email, plan_type, subscription expiry)
 pub fn update_account_metadata(
     account_id: &str,
     name: Option<String>,
     email: Option<String>,
     plan_type: Option<String>,
-) -> Result<()> {
+    subscription_expires_at: Option<Option<DateTime<Utc>>>,
+) -> Result<StoredAccount> {
     let mut store = load_accounts()?;
 
     // Check for duplicate names first (if renaming)
@@ -185,8 +186,13 @@ pub fn update_account_metadata(
         account.plan_type = plan_type;
     }
 
+    if let Some(subscription_expires_at) = subscription_expires_at {
+        account.subscription_expires_at = subscription_expires_at;
+    }
+
+    let updated = account.clone();
     save_accounts(&store)?;
-    Ok(())
+    Ok(updated)
 }
 
 /// Update ChatGPT OAuth tokens for an account and return the updated account.
